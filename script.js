@@ -51,12 +51,12 @@ document.addEventListener('DOMContentLoaded', function () {
     btnBuscarDireccionCliente.textContent = 'Buscar Dirección';
     btnBuscarDireccionCliente.type = 'button';
     btnBuscarDireccionCliente.classList.add('btn', 'btn-primary', 'mt-2');
-    
+
     const divDireccionCliente = document.querySelector('label[for="direccionCliente"]').parentElement;
     divDireccionCliente.appendChild(btnBuscarDireccionCliente);
 
     // Evento para buscar dirección del cliente
-    btnBuscarDireccionCliente.addEventListener('click', async function() {
+    btnBuscarDireccionCliente.addEventListener('click', async function () {
         const direccionInput = document.getElementById('direccionCliente');
         const direccion = direccionInput.value.trim();
 
@@ -204,8 +204,7 @@ document.addEventListener('DOMContentLoaded', function () {
             latLngRestaurante = { lat, lng };
 
             // Usar la dirección del restaurante o la dirección legible
-            document.getElementById('direccionRestaurante').value =
-                restauranteSeleccionado.direccion || direccionLegible;
+            document.getElementById('direccionRestaurante').value = restauranteSeleccionado.direccion || direccionLegible;
 
             // Centrar mapa en el restaurante seleccionado
             map.setView([lat, lng], 14);
@@ -230,64 +229,91 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('direccionRestaurante').value = direccionLegible;
         }
     });
-        
+
     document.getElementById('envioForm').addEventListener('submit', function (event) {
         event.preventDefault();
-        
-
-        // Parametros para el calculo
-        // costo energia, costo drone, costo mantenimiento, 
-        const costoEnergia = parseFloat(document.getElementById('costoEnergia').value);
-        
-        
 
 
+        // _______Parametros para el calculo_______
 
-        // Validación adicional antes de calcular
-        if (isNaN(costoEnergia) || costoEnergia <= 0) {
-            document.getElementById('resultado').innerText = 'Por favor, ingrese un costo de energía válido.';
-            return;
+        // Definir costos fijos
+        const costoDrone = 5000; // Costo fijo por uso del dron
+        const costoMantenimiento = 2000; // Costo de mantenimiento
+        const amortizacion = 1000; // Costo de amortización
+        const costoOperador = 3000; // Costo del operador
+        const vuelosEstimados = 10; // Número estimado de vuelos
+
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la Tierra en km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c; // Distancia en km
         }
 
-        if (latLngCliente && latLngRestaurante) {
-            const distancia = map.distance(latLngCliente, latLngRestaurante) / 1000; // Convertir a kilómetros
+        function calcularCostoDespacho() {
+            // Obtener el peso del pedido
+            const peso = parseFloat(document.getElementById('peso').value);
 
-            // Función polinómica para calcular el costo
-            
-            const costoEnvio = (costoEnergia * Math.pow(distancia , 2));
-            
+            // Obtener las coordenadas del cliente y del restaurante
+            if (!latLngCliente || !latLngRestaurante) {
+                document.getElementById('resultado').innerText = 'Por favor, selecciona ambas ubicaciones en el mapa.';
+                return;
+            }
 
-            document.getElementById('resultado').innerText = `El costo estimado del envío es: $${costoEnvio.toFixed()} CLP`;
-        } else {
-            document.getElementById('resultado').innerText = 'Por favor, selecciona ambas ubicaciones en el mapa.';
+            // Calcular la distancia
+            const distancia = calcularDistancia(latLngCliente.lat, latLngCliente.lng, latLngRestaurante.lat, latLngRestaurante.lng); // Distancia en kilómetros
+
+            // Cálculo del costo de despacho
+            const costoDespacho = (
+                (costoDrone / vuelosEstimados) + // Costo drone por vuelo
+                (costoMantenimiento + amortizacion + costoOperador) + // Costos fijos
+                (peso * 1000 * 0.1) + // Costo adicional por peso (suponiendo 10% del peso total en CLP)
+                (distancia * 2000) // Costo adicional por distancia (suponiendo 2000 CLP por km)
+            );
+
+            document.getElementById('resultado').innerText = `El costo estimado del despacho es: $${costoDespacho.toFixed(0)} CLP`;
+            // Muestra el resultado
+            document.getElementById('resultado').style.display = 'block'; // O 'flex' si usas flexbox
         }
+
+        // Llamar a la función al enviar el formulario
+        document.getElementById('envioForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            calcularCostoDespacho();
+        });
+
+        function reiniciarFormulario() {
+            // Limpiar inputs
+            document.getElementById('direccionCliente').value = '';
+            document.getElementById('direccionRestaurante').value = '';
+            document.getElementById('peso').value = '';
+            document.getElementById('resultado').innerText = '';
+            document.getElementById('selectRestaurantes').selectedIndex = 0;
+
+            // Eliminar marcadores
+            if (markerCliente) {
+                map.removeLayer(markerCliente);
+                markerCliente = null;
+                latLngCliente = null;
+            }
+
+            if (markerRestaurante) {
+                map.removeLayer(markerRestaurante);
+                markerRestaurante = null;
+                latLngRestaurante = null;
+            }
+
+            // Resetear vista del mapa
+            map.setView([-36.6067, -72.1033], 12);
+        }
+
+        // Añadir evento al botón de reinicio
+        document.getElementById('btnReiniciar').addEventListener('click', reiniciarFormulario);
     });
-
-function reiniciarFormulario() {
-    // Limpiar inputs
-    document.getElementById('direccionCliente').value = '';
-    document.getElementById('direccionRestaurante').value = '';
-    document.getElementById('costoEnergia').value = '';
-    document.getElementById('resultado').innerText = '';
-    document.getElementById('selectRestaurantes').selectedIndex = 0;
-
-    // Eliminar marcadores
-    if (markerCliente) {
-        map.removeLayer(markerCliente);
-        markerCliente = null;
-        latLngCliente = null;
-    }
-
-    if (markerRestaurante) {
-        map.removeLayer(markerRestaurante);
-        markerRestaurante = null;
-        latLngRestaurante = null;
-    }
-
-    // Resetear vista del mapa
-    map.setView([-36.6067, -72.1033], 12);
-}
-
-// Añadir evento al botón de reinicio
-document.getElementById('btnReiniciar').addEventListener('click', reiniciarFormulario); 
 });
