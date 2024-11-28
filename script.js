@@ -237,11 +237,11 @@ document.addEventListener('DOMContentLoaded', function () {
         // _______Parametros para el calculo_______
 
         // Definir costos fijos
-        const costoDrone = 5000; // Costo fijo por uso del dron
-        const costoMantenimiento = 2000; // Costo de mantenimiento
-        const amortizacion = 1000; // Costo de amortización
-        const costoOperador = 3000; // Costo del operador
-        const vuelosEstimados = 10; // Número estimado de vuelos
+        const costoDrone = 500; // Costo fijo por uso del dron
+        const costoMantenimiento = 500; // Costo de mantenimiento
+        const amortizacion = 800; // Costo de amortización
+        const costoOperador = 200; // Costo del operador
+        const vuelosEstimados = 1000; // Número estimado de vuelos
 
         function calcularDistancia(lat1, lon1, lat2, lon2) {
             const R = 6371; // Radio de la Tierra en km
@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 (costoDrone / vuelosEstimados) + // Costo drone por vuelo
                 (costoMantenimiento + amortizacion + costoOperador) + // Costos fijos
                 (peso * 1000 * 0.1) + // Costo adicional por peso (suponiendo 10% del peso total en CLP)
-                (distancia * 2000) // Costo adicional por distancia (suponiendo 2000 CLP por km)
+                (distancia * 1000) // Costo adicional por distancia (suponiendo 2000 CLP por km)
             );
 
             document.getElementById('resultado').innerText = `El costo estimado del despacho es: $${costoDespacho.toFixed(0)} CLP`;
